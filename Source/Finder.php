@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,54 +34,81 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File;
+namespace igorora\File;
 
-use Hoa\Iterator;
+use igorora\Iterator\Map;
+use igorora\Iterator\Glob;
+use igorora\Iterator\Append;
+use igorora\Iterator\Aggregate;
+use igorora\Iterator\FileSystem;
+use igorora\Iterator\CallbackFilter;
+use igorora\Iterator\IteratorIterator;
+use igorora\Iterator\Recursive\Iterator;
+use igorora\Iterator\Recursive\Directory;
 
 /**
- * Class \Hoa\File\Finder.
+ * Class \igorora\File\Finder.
  *
  * This class allows to find files easily by using filters and flags.
+ *
+ * @copyright  Copyright © 2007-2017 Hoa community
+ * @license    New BSD License
  */
-class Finder implements Iterator\Aggregate
+class Finder implements Aggregate
 {
     /**
      * SplFileInfo classname.
+     *
+     * @var string
      */
-    protected $_splFileInfo = SplFileInfo::class;
+    protected $_splFileInfo = 'igorora\File\SplFileInfo';
 
     /**
      * Paths where to look for.
+     *
+     * @var array
      */
     protected $_paths       = [];
 
     /**
      * Max depth in recursion.
+     *
+     * @var int
      */
     protected $_maxDepth    = -1;
 
     /**
      * Filters.
+     *
+     * @var array
      */
     protected $_filters     = [];
 
     /**
      * Flags.
+     *
+     * @var int
      */
     protected $_flags       = -1;
 
     /**
      * Types of files to handle.
+     *
+     * @var array
      */
     protected $_types       = [];
 
     /**
      * What comes first: parent or child?
+     *
+     * @var int
      */
     protected $_first       = -1;
 
     /**
      * Sorts.
+     *
+     * @var array
      */
     protected $_sorts       = [];
 
@@ -91,21 +116,25 @@ class Finder implements Iterator\Aggregate
 
     /**
      * Initialize.
+     *
      */
     public function __construct()
     {
-        $this->_flags =   Iterator\FileSystem::KEY_AS_PATHNAME
-                        | Iterator\FileSystem::CURRENT_AS_FILEINFO
-                        | Iterator\FileSystem::SKIP_DOTS;
-        $this->_first = Iterator\Recursive\Iterator::SELF_FIRST;
+        $this->_flags =   FileSystem::KEY_AS_PATHNAME
+                        | FileSystem::CURRENT_AS_FILEINFO
+                        | FileSystem::SKIP_DOTS;
+        $this->_first = Iterator::SELF_FIRST;
 
         return;
     }
 
     /**
      * Select a directory to scan.
+     *
+     * @param   string|array  $paths    One or more paths.
+     * @return  \igorora\File\Finder
      */
-    public function in($paths): self
+    public function in($paths)
     {
         if (!is_array($paths)) {
             $paths = [$paths];
@@ -113,8 +142,8 @@ class Finder implements Iterator\Aggregate
 
         foreach ($paths as $path) {
             if (1 === preg_match('/[\*\?\[\]]/', $path)) {
-                $iterator = new Iterator\CallbackFilter(
-                    new Iterator\Glob(rtrim($path, DS)),
+                $iterator = new CallbackFilter(
+                    new Glob(rtrim($path, DS)),
                     function ($current) {
                         return $current->isDir();
                     }
@@ -133,8 +162,11 @@ class Finder implements Iterator\Aggregate
 
     /**
      * Set max depth for recursion.
+     *
+     * @param   int  $depth    Depth.
+     * @return  \igorora\File\Finder
      */
-    public function maxDepth(int $depth): self
+    public function maxDepth($depth)
     {
         $this->_maxDepth = $depth;
 
@@ -143,8 +175,10 @@ class Finder implements Iterator\Aggregate
 
     /**
      * Include files in the result.
+     *
+     * @return  \igorora\File\Finder
      */
-    public function files(): self
+    public function files()
     {
         $this->_types[] = 'file';
 
@@ -153,8 +187,10 @@ class Finder implements Iterator\Aggregate
 
     /**
      * Include directories in the result.
+     *
+     * @return  \igorora\File\Finder
      */
-    public function directories(): self
+    public function directories()
     {
         $this->_types[] = 'dir';
 
@@ -163,8 +199,10 @@ class Finder implements Iterator\Aggregate
 
     /**
      * Include links in the result.
+     *
+     * @return  \igorora\File\Finder
      */
-    public function links(): self
+    public function links()
     {
         $this->_types[] = 'link';
 
@@ -173,13 +211,16 @@ class Finder implements Iterator\Aggregate
 
     /**
      * Follow symbolink links.
+     *
+     * @param   bool  $flag    Whether we follow or not.
+     * @return  \igorora\File\Finder
      */
-    public function followSymlinks(bool $flag = true): self
+    public function followSymlinks($flag = true)
     {
         if (true === $flag) {
-            $this->_flags ^= Iterator\FileSystem::FOLLOW_SYMLINKS;
+            $this->_flags ^= FileSystem::FOLLOW_SYMLINKS;
         } else {
-            $this->_flags |= Iterator\FileSystem::FOLLOW_SYMLINKS;
+            $this->_flags |= FileSystem::FOLLOW_SYMLINKS;
         }
 
         return $this;
@@ -189,8 +230,11 @@ class Finder implements Iterator\Aggregate
      * Include files that match a regex.
      * Example:
      *     $this->name('#\.php$#');
+     *
+     * @param   string  $regex    Regex.
+     * @return  \igorora\File\Finder
      */
-    public function name(string $regex): self
+    public function name($regex)
     {
         $this->_filters[] = function (\SplFileInfo $current) use ($regex) {
             return 0 !== preg_match($regex, $current->getBasename());
@@ -203,8 +247,11 @@ class Finder implements Iterator\Aggregate
      * Exclude directories that match a regex.
      * Example:
      *      $this->notIn('#^\.(git|hg)$#');
+     *
+     * @param   string  $regex    Regex.
+     * @return  \igorora\File\Finder
      */
-    public function notIn(string $regex): self
+    public function notIn($regex)
     {
         $this->_filters[] = function (\SplFileInfo $current) use ($regex) {
             foreach (explode(DS, $current->getPathname()) as $part) {
@@ -229,15 +276,18 @@ class Finder implements Iterator\Aggregate
      *     • unit could be: b (default), Kb, Mb, Gb, Tb, Pb, Eb, Zb, Yb.
      * Example:
      *     $this->size('>= 12Kb');
+     *
+     * @param   string  $size    Size.
+     * @return  \igorora\File\Finder
      */
-    public function size(string $size): self
+    public function size($size)
     {
         if (0 === preg_match('#^(<|<=|>|>=|=)\s*(\d+)\s*((?:[KMGTPEZY])b)?$#', $size, $matches)) {
             return $this;
         }
 
         $number   = floatval($matches[2]);
-        $unit     = $matches[3] ?? 'b';
+        $unit     = isset($matches[3]) ? $matches[3] : 'b';
         $operator = $matches[1];
 
         switch ($unit) {
@@ -271,25 +321,25 @@ class Finder implements Iterator\Aggregate
 
             // peta.
             case 'Pb':
-                $number *= 1024 ** 5;
+                $number *= pow(1024, 5);
 
                 break;
 
             // exa.
             case 'Eb':
-                $number *= 1024 ** 6;
+                $number *= pow(1024, 6);
 
                 break;
 
             // zetta.
             case 'Zb':
-                $number *= 1024 ** 7;
+                $number *= pow(1024, 7);
 
                 break;
 
             // yota.
             case 'Yb':
-                $number *= 1024 ** 8;
+                $number *= pow(1024, 8);
 
                 break;
         }
@@ -340,13 +390,16 @@ class Finder implements Iterator\Aggregate
 
     /**
      * Whether we should include dots or not (respectively . and ..).
+     *
+     * @param   bool  $flag    Include or not.
+     * @return  \igorora\File\Finder
      */
-    public function dots(bool $flag = true): self
+    public function dots($flag = true)
     {
         if (true === $flag) {
-            $this->_flags ^= Iterator\FileSystem::SKIP_DOTS;
+            $this->_flags ^= FileSystem::SKIP_DOTS;
         } else {
-            $this->_flags |= Iterator\FileSystem::SKIP_DOTS;
+            $this->_flags |= FileSystem::SKIP_DOTS;
         }
 
         return $this;
@@ -354,8 +407,11 @@ class Finder implements Iterator\Aggregate
 
     /**
      * Include files that are owned by a certain owner.
+     *
+     * @param   int  $owner    Owner.
+     * @return  \igorora\File\Finder
      */
-    public function owner(int $owner): self
+    public function owner($owner)
     {
         $this->_filters[] = function (\SplFileInfo $current) use ($owner) {
             return $current->getOwner() === $owner;
@@ -373,8 +429,12 @@ class Finder implements Iterator\Aggregate
      * If the date does not have the “ago” keyword, it will be added.
      * Example: “42 hours” is equivalent to “since 42 hours” which is equivalent
      * to “since 42 hours ago”.
+     *
+     * @param   string  $date         Date.
+     * @param   int     &$operator    Operator (-1 for since, 1 for until).
+     * @return  int
      */
-    protected function formatDate(string $date, ?int &$operator): int
+    protected function formatDate($date, &$operator)
     {
         $operator = -1;
 
@@ -399,8 +459,11 @@ class Finder implements Iterator\Aggregate
      * Include files that have been changed from a certain date.
      * Example:
      *     $this->changed('since 13 days');
+     *
+     * @param   string  $date    Date.
+     * @return  \igorora\File\Finder
      */
-    public function changed(string $date): self
+    public function changed($date)
     {
         $time = $this->formatDate($date, $operator);
 
@@ -421,8 +484,11 @@ class Finder implements Iterator\Aggregate
      * Include files that have been modified from a certain date.
      * Example:
      *     $this->modified('since 13 days');
+     *
+     * @param   string  $date    Date.
+     * @return  \igorora\File\Finder
      */
-    public function modified(string $date): self
+    public function modified($date)
     {
         $time = $this->formatDate($date, $operator);
 
@@ -448,8 +514,11 @@ class Finder implements Iterator\Aggregate
      *     $this->filter(function ($current) {
      *         return $current->isReadable();
      *     });
+     *
+     * @param   callable  $callback    Callback
+     * @return  \igorora\File\Finder
      */
-    public function filter(callable $callback): self
+    public function filter($callback)
     {
         $this->_filters[] = $callback;
 
@@ -462,8 +531,11 @@ class Finder implements Iterator\Aggregate
      * for its constructor. Else, strcmp() will be used.
      * Example:
      *     $this->sortByName('fr_FR');
+     *
+     * @param   string  $locale   Locale.
+     * @return  \igorora\File\Finder
      */
-    public function sortByName(string $locale = 'root'): self
+    public function sortByName($locale = 'root')
     {
         if (true === class_exists('Collator', false)) {
             $collator = new \Collator($locale);
@@ -484,8 +556,10 @@ class Finder implements Iterator\Aggregate
      * Sort result by size.
      * Example:
      *     $this->sortBySize();
+     *
+     * @return  \igorora\File\Finder
      */
-    public function sortBySize(): self
+    public function sortBySize()
     {
         $this->_sorts[] = function (\SplFileInfo $a, \SplFileInfo $b) {
             return $a->getSize() < $b->getSize();
@@ -503,8 +577,11 @@ class Finder implements Iterator\Aggregate
      *     $this->sort(function ($a, $b) {
      *         return $a->getMTime() < $b->getMTime();
      *     });
+     *
+     * @param   callable  $callable    Callback.
+     * @return  \igorora\File\Finder
      */
-    public function sort(callable $callable): self
+    public function sort($callable)
     {
         $this->_sorts[] = $callable;
 
@@ -513,20 +590,24 @@ class Finder implements Iterator\Aggregate
 
     /**
      * Child comes first when iterating.
+     *
+     * @return  \igorora\File\Finder
      */
-    public function childFirst(): self
+    public function childFirst()
     {
-        $this->_first = Iterator\Recursive\Iterator::CHILD_FIRST;
+        $this->_first = Iterator::CHILD_FIRST;
 
         return $this;
     }
 
     /**
      * Get the iterator.
+     *
+     * @return  \Traversable
      */
-    public function getIterator(): iterable
+    public function getIterator() : \Traversable
     {
-        $_iterator = new Iterator\Append();
+        $_iterator = new Append();
         $types     = $this->getTypes();
 
         if (!empty($types)) {
@@ -540,8 +621,8 @@ class Finder implements Iterator\Aggregate
 
         foreach ($this->getPaths() as $path) {
             if (1 == $maxDepth) {
-                $iterator = new Iterator\IteratorIterator(
-                    new Iterator\Recursive\Directory(
+                $iterator = new IteratorIterator(
+                    new Directory(
                         $path,
                         $this->getFlags(),
                         $splFileInfo
@@ -549,8 +630,8 @@ class Finder implements Iterator\Aggregate
                     $this->getFirst()
                 );
             } else {
-                $iterator = new Iterator\Recursive\Iterator(
-                    new Iterator\Recursive\Directory(
+                $iterator = new Iterator(
+                    new Directory(
                         $path,
                         $this->getFlags(),
                         $splFileInfo
@@ -567,7 +648,7 @@ class Finder implements Iterator\Aggregate
         }
 
         foreach ($this->getFilters() as $filter) {
-            $_iterator = new Iterator\CallbackFilter(
+            $_iterator = new CallbackFilter(
                 $_iterator,
                 $filter
             );
@@ -585,13 +666,16 @@ class Finder implements Iterator\Aggregate
             uasort($array, $sort);
         }
 
-        return new Iterator\Map($array);
+        return new Map($array);
     }
 
     /**
      * Set SplFileInfo classname.
+     *
+     * @param   string  $splFileInfo    SplFileInfo classname.
+     * @return  string
      */
-    public function setSplFileInfo(string $splFileInfo): string
+    public function setSplFileInfo($splFileInfo)
     {
         $old                = $this->_splFileInfo;
         $this->_splFileInfo = $splFileInfo;
@@ -601,64 +685,80 @@ class Finder implements Iterator\Aggregate
 
     /**
      * Get SplFileInfo classname.
+     *
+     * @return  string
      */
-    public function getSplFileInfo(): string
+    public function getSplFileInfo()
     {
         return $this->_splFileInfo;
     }
 
     /**
      * Get all paths.
+     *
+     * @return  array
      */
-    protected function getPaths(): array
+    protected function getPaths()
     {
         return $this->_paths;
     }
 
     /**
      * Get max depth.
+     *
+     * @return  int
      */
-    public function getMaxDepth(): int
+    public function getMaxDepth()
     {
         return $this->_maxDepth;
     }
 
     /**
      * Get types.
+     *
+     * @return  array
      */
-    public function getTypes(): array
+    public function getTypes()
     {
         return $this->_types;
     }
 
     /**
      * Get filters.
+     *
+     * @return  array
      */
-    protected function getFilters(): array
+    protected function getFilters()
     {
         return $this->_filters;
     }
 
     /**
      * Get sorts.
+     *
+     * @return  array
      */
-    protected function getSorts(): array
+    protected function getSorts()
     {
         return $this->_sorts;
     }
 
     /**
      * Get flags.
+     *
+     * @return  int
      */
-    public function getFlags(): int
+    public function getFlags()
     {
         return $this->_flags;
     }
 
     /**
      * Get first.
+     *
+     * @return  int
      */
-    public function getFirst(): int
+    public function getFirst()
     {
         return $this->_first;
     }

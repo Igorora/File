@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,21 +34,28 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File\Temporary;
+namespace igorora\File\Temporary;
 
-use Hoa\Consistency;
-use Hoa\File;
-use Hoa\Stream;
+use igorora\Stream;
+use igorora\File\File;
+use igorora\Stream\Context;
+use igorora\Consistency\Consistency;
+use igorora\File\Exception\Exception;
 
 /**
- * Class \Hoa\File\Temporary.
+ * Class \igorora\File\Temporary.
  *
  * Temporary file handler.
+ *
+ * @copyright  Copyright © 2007-2017 Hoa community
+ * @license    New BSD License
  */
 class Temporary extends File
 {
     /**
      * Temporary file index.
+     *
+     * @var int
      */
     private static $_i = 0;
 
@@ -58,15 +63,22 @@ class Temporary extends File
 
     /**
      * Open a temporary file.
+     *
+     * @param   string  $streamName    Stream name (or file descriptor).
+     * @param   string  $mode          Open mode, see the parent::MODE_*
+     *                                 constants.
+     * @param   string  $context       Context ID (please, see the
+     *                                 \igorora\Stream\Context class).
+     * @param   bool    $wait          Differ opening or not.
      */
     public function __construct(
-        string $streamName,
-        string $mode,
-        string $context = null,
-        bool $wait      = false
+        $streamName,
+        $mode,
+        $context = null,
+        $wait    = false
     ) {
         if (null === $streamName) {
-            $streamName = 'hoa://Library/File/Temporary.php#' . self::$_i++;
+            $streamName = 'igorora://Library/File/Temporary.php#' . self::$_i++;
         }
 
         parent::__construct($streamName, $mode, $context, $wait);
@@ -76,11 +88,17 @@ class Temporary extends File
 
     /**
      * Open the stream and return the associated resource.
+     *
+     * @param   string              $streamName    Stream name (here, it is
+     *                                             null).
+     * @param   Context  $context       Context.
+     * @return  resource
+     * @throws  Exception
      */
-    protected function &_open(string $streamName, Stream\Context $context = null)
+    protected function &_open($streamName, Context $context = null)
     {
         if (false === $out = @tmpfile()) {
-            throw new File\Exception(
+            throw new Exception(
                 'Failed to open a temporary stream.',
                 0
             );
@@ -93,10 +111,18 @@ class Temporary extends File
      * Create a unique temporary file, i.e. a file with a unique filename. It is
      * different of calling $this->__construct() that will create a temporary
      * file that will be destroy when calling the $this->close() method.
+     *
+     * @param   string  $directory    Directory where the temporary filename
+     *                                will be created. If the directory does not
+     *                                exist, it may generate a file in the
+     *                                system's temporary directory.
+     * @param   string  $prefix       Prefix of the generated temporary
+     *                                filename.
+     * @return  string
      */
-    public static function create(string $directory = null, string $prefix = '__hoa_')
+    public static function create($directory = null, $prefix = '__igorora_')
     {
-        if (null === $directory ||
+        if (null  === $directory ||
             false === is_dir($directory)) {
             $directory = static::getTemporaryDirectory();
         }
@@ -106,8 +132,10 @@ class Temporary extends File
 
     /**
      * Get the directory path used for temporary files.
+     *
+     * @return  string
      */
-    public static function getTemporaryDirectory(): string
+    public static function getTemporaryDirectory()
     {
         return sys_get_temp_dir();
     }
@@ -116,4 +144,4 @@ class Temporary extends File
 /**
  * Flex entity.
  */
-Consistency::flexEntity(Temporary::class);
+Consistency::flexEntity('igorora\File\Temporary\Temporary');

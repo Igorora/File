@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,13 +34,14 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File\Exception;
+namespace igorora\File\Exception;
 
 /**
- * Class \Hoa\File\Exception\FileDoesNotExist.
+ * Class \igorora\File\Exception\FileDoesNotExist.
  *
- * Extending the \Hoa\File\Exception class.
+ * Extending the \igorora\File\Exception class.
  *
+ * @copyright  Copyright © 2007-2017 Hoa community
  * @license    New BSD License
  */
 class FileDoesNotExist extends Exception

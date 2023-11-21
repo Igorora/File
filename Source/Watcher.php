@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,21 +34,29 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File;
+namespace igorora\File;
 
-use Hoa\Event;
+use igorora\Event\Bucket;
+use igorora\Event\Listens;
+use igorora\Event\Listener;
+use igorora\Event\Listenable;
 
 /**
- * Class \Hoa\File\Watcher.
+ * Class \igorora\File\Watcher.
  *
  * A naive file system watcher that fires three events: new, move and modify.
+ *
+ * @copyright  Copyright © 2007-2017 Hoa community
+ * @license    New BSD License
  */
-class Watcher extends Finder implements Event\Listenable
+class Watcher extends Finder implements Listenable
 {
-    use Event\Listens;
+    use Listens;
 
     /**
      * Latency.
+     *
+     * @var int
      */
     protected $_latency = 1;
 
@@ -58,13 +64,15 @@ class Watcher extends Finder implements Event\Listenable
 
     /**
      * Constructor.
+     *
+     * @param   int  $latency    Latency (in seconds).
      */
-    public function __construct(int $latency = null)
+    public function __construct($latency = null)
     {
         parent::__construct();
 
         $this->setListener(
-            new Event\Listener(
+            new Listener(
                 $this,
                 [
                     'new',
@@ -88,8 +96,10 @@ class Watcher extends Finder implements Event\Listenable
      *     • new, when a file is new, i.e. found by the finder;
      *     • modify, when a file has been modified;
      *     • move, when a file has moved, i.e. no longer found by the finder.
+     *
+     * @return  void
      */
-    public function run(): void
+    public function run()
     {
         $iterator = $this->getIterator();
         $previous = iterator_to_array($iterator);
@@ -100,7 +110,7 @@ class Watcher extends Finder implements Event\Listenable
                 if (!isset($previous[$name])) {
                     $this->getListener()->fire(
                         'new',
-                        new Event\Bucket([
+                        new Bucket([
                             'file' => $c
                         ])
                     );
@@ -117,7 +127,7 @@ class Watcher extends Finder implements Event\Listenable
                 if ($previous[$name]->getHash() != $c->getHash()) {
                     $this->getListener()->fire(
                         'modify',
-                        new Event\Bucket([
+                        new Bucket([
                             'file' => $c
                         ])
                     );
@@ -129,7 +139,7 @@ class Watcher extends Finder implements Event\Listenable
             foreach ($previous as $p) {
                 $this->getListener()->fire(
                     'move',
-                    new Event\Bucket([
+                    new Bucket([
                         'file' => $p
                     ])
                 );
@@ -146,8 +156,11 @@ class Watcher extends Finder implements Event\Listenable
 
     /**
      * Set latency.
+     *
+     * @param   int  $latency    Latency (in seconds).
+     * @return  int
      */
-    public function setLatency(int $latency): int
+    public function setLatency($latency)
     {
         $old            = $this->_latency;
         $this->_latency = $latency;
@@ -157,8 +170,10 @@ class Watcher extends Finder implements Event\Listenable
 
     /**
      * Get latency.
+     *
+     * @return  int
      */
-    public function getLatency(): int
+    public function getLatency()
     {
         return $this->_latency;
     }

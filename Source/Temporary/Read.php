@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,26 +34,38 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File\Temporary;
+namespace igorora\File\Temporary;
 
-use Hoa\File;
-use Hoa\Stream;
+use igorora\File;
+use igorora\Stream;
+use igorora\Stream\IStream\In;
+use igorora\File\Exception\Exception;
+use igorora\File\Exception\FileDoesNotExist;
 
 /**
- * Class \Hoa\File\Temporary\Read.
+ * Class \igorora\File\Temporary\Read.
  *
  * Read a temporary file.
+ *
+ * @copyright  Copyright © 2007-2017 Hoa community
+ * @license    New BSD License
  */
-class Read extends Temporary implements Stream\IStream\In
+class Read extends Temporary implements In
 {
     /**
      * Open a file.
+     *
+     * @param   string  $streamName    Stream name.
+     * @param   string  $mode          Open mode, see the parent::MODE_* constants.
+     * @param   string  $context       Context ID (please, see the
+     *                                 \igorora\Stream\Context class).
+     * @param   bool    $wait          Differ opening or not.
      */
     public function __construct(
-        string $streamName,
-        string $mode    = parent::MODE_READ,
-        string $context = null,
-        bool $wait      = false
+        $streamName,
+        $mode    = parent::MODE_READ,
+        $context = null,
+        $wait    = false
     ) {
         parent::__construct($streamName, $mode, $context, $wait);
 
@@ -64,15 +74,21 @@ class Read extends Temporary implements Stream\IStream\In
 
     /**
      * Open the stream and return the associated resource.
+     *
+     * @param   string               $streamName    Stream name (e.g. path or URL).
+     * @param   \igorora\Stream\Context  $context       Context.
+     * @return  resource
+     * @throws  FileDoesNotExist
+     * @throws  Exception
      */
-    protected function &_open(string $streamName, Stream\Context $context = null)
+    protected function &_open($streamName, Stream\Context $context = null)
     {
         static $createModes = [
             parent::MODE_READ
         ];
 
         if (!in_array($this->getMode(), $createModes)) {
-            throw new File\Exception(
+            throw new Exception(
                 'Open mode are not supported; given %d. Only %s are supported.',
                 0,
                 [$this->getMode(), implode(', ', $createModes)]
@@ -83,7 +99,7 @@ class Read extends Temporary implements Stream\IStream\In
 
         if (((isset($match[1]) && $match[1] == 'file') || !isset($match[1])) &&
             !file_exists($streamName)) {
-            throw new File\Exception\FileDoesNotExist(
+            throw new FileDoesNotExist(
                 'File %s does not exist.',
                 1,
                 $streamName
@@ -97,19 +113,25 @@ class Read extends Temporary implements Stream\IStream\In
 
     /**
      * Test for end-of-file.
+     *
+     * @return  bool
      */
-    public function eof(): bool
+    public function eof()
     {
         return feof($this->getStream());
     }
 
     /**
      * Read n characters.
+     *
+     * @param   int     $length    Length.
+     * @return  string
+     * @throws  Exception
      */
-    public function read(int $length)
+    public function read($length)
     {
         if (0 > $length) {
-            throw new File\Exception(
+            throw new Exception(
                 'Length must be greater than 0, given %d.',
                 2,
                 $length
@@ -121,14 +143,19 @@ class Read extends Temporary implements Stream\IStream\In
 
     /**
      * Alias of $this->read().
+     *
+     * @param   int     $length    Length.
+     * @return  string
      */
-    public function readString(int $length)
+    public function readString($length)
     {
         return $this->read($length);
     }
 
     /**
      * Read a character.
+     *
+     * @return  string
      */
     public function readCharacter()
     {
@@ -137,6 +164,8 @@ class Read extends Temporary implements Stream\IStream\In
 
     /**
      * Read a boolean.
+     *
+     * @return  bool
      */
     public function readBoolean()
     {
@@ -145,16 +174,22 @@ class Read extends Temporary implements Stream\IStream\In
 
     /**
      * Read an integer.
+     *
+     * @param   int     $length    Length.
+     * @return  int
      */
-    public function readInteger(int $length = 1)
+    public function readInteger($length = 1)
     {
         return (int) $this->read($length);
     }
 
     /**
      * Read a float.
+     *
+     * @param   int     $length    Length.
+     * @return  float
      */
-    public function readFloat(int $length = 1)
+    public function readFloat($length = 1)
     {
         return (float) $this->read($length);
     }
@@ -162,14 +197,19 @@ class Read extends Temporary implements Stream\IStream\In
     /**
      * Read an array.
      * Alias of the $this->scanf() method.
+     *
+     * @param   string  $format    Format (see printf's formats).
+     * @return  array
      */
-    public function readArray(string $format = null)
+    public function readArray($format = null)
     {
         return $this->scanf($format);
     }
 
     /**
      * Read a line.
+     *
+     * @return  string
      */
     public function readLine()
     {
@@ -178,16 +218,22 @@ class Read extends Temporary implements Stream\IStream\In
 
     /**
      * Read all, i.e. read as much as possible.
+     *
+     * @param   int  $offset    Offset.
+     * @return  string
      */
-    public function readAll(int $offset = 0)
+    public function readAll($offset = 0)
     {
         return stream_get_contents($this->getStream(), -1, $offset);
     }
 
     /**
      * Parse input from a stream according to a format.
+     *
+     * @param   string  $format    Format (see printf's formats).
+     * @return  array
      */
-    public function scanf(string $format): array
+    public function scanf($format)
     {
         return fscanf($this->getStream(), $format);
     }

@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,23 +34,24 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File\Exception;
+namespace igorora\File\Exception;
 
-use Hoa\Consistency;
-use Hoa\Exception as HoaException;
+use igorora\Consistency\Consistency;
+use igorora\Exception\Exception as IgororaException;
 
 /**
- * Class \Hoa\File\Exception.
+ * Class \igorora\File\Exception.
  *
- * Extending the \Hoa\Exception\Exception class.
+ * Extending the \igorora\Exception\Exception class.
  *
+ * @copyright  Copyright © 2007-2017 Hoa community
  * @license    New BSD License
  */
-class Exception extends HoaException
+class Exception extends IgororaException
 {
 }
 
 /**
  * Flex entity.
  */
-Consistency::flexEntity('Hoa\File\Exception\Exception');
+Consistency::flexEntity('igorora\File\Exception\Exception');

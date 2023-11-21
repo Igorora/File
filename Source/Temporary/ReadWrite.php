@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,26 +34,38 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File\Temporary;
+namespace igorora\File\Temporary;
 
-use Hoa\File;
-use Hoa\Stream;
+use igorora\File;
+use igorora\Stream;
 
 /**
- * Class \Hoa\File\Temporary\ReadWrite.
+ * Class \igorora\File\Temporary\ReadWrite.
  *
  * Read/write a temporary file.
+ *
+ * @copyright  Copyright © 2007-2017 Hoa community
+ * @license    New BSD License
  */
-class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\Out
+class          ReadWrite
+    extends    Temporary
+    implements Stream\IStream\In,
+               Stream\IStream\Out
 {
     /**
      * Open a file.
+     *
+     * @param   string  $streamName    Stream name.
+     * @param   string  $mode          Open mode, see the parent::MODE_* constants.
+     * @param   string  $context       Context ID (please, see the
+     *                                 \igorora\Stream\Context class).
+     * @param   bool    $wait          Differ opening or not.
      */
     public function __construct(
-        string $streamName,
-        string $mode    = parent::MODE_APPEND_READ_WRITE,
-        string $context = null,
-        bool $wait      = false
+        $streamName,
+        $mode    = parent::MODE_APPEND_READ_WRITE,
+        $context = null,
+        $wait    = false
     ) {
         parent::__construct($streamName, $mode, $context, $wait);
 
@@ -64,8 +74,14 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Open the stream and return the associated resource.
+     *
+     * @param   string               $streamName    Stream name (e.g. path or URL).
+     * @param   \igorora\Stream\Context  $context       Context.
+     * @return  resource
+     * @throws  \igorora\File\Exception\FileDoesNotExist
+     * @throws  \igorora\File\Exception
      */
-    protected function &_open(string $streamName, Stream\Context $context = null)
+    protected function &_open($streamName, Stream\Context $context = null)
     {
         static $createModes = [
             parent::MODE_READ_WRITE,
@@ -101,16 +117,22 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Test for end-of-file.
+     *
+     * @return  bool
      */
-    public function eof(): bool
+    public function eof()
     {
         return feof($this->getStream());
     }
 
     /**
      * Read n characters.
+     *
+     * @param   int     $length    Length.
+     * @return  string
+     * @throws  \igorora\File\Exception
      */
-    public function read(int $length)
+    public function read($length)
     {
         if (0 > $length) {
             throw new File\Exception(
@@ -125,14 +147,19 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Alias of $this->read().
+     *
+     * @param   int     $length    Length.
+     * @return  string
      */
-    public function readString(int $length)
+    public function readString($length)
     {
         return $this->read($length);
     }
 
     /**
      * Read a character.
+     *
+     * @return  string
      */
     public function readCharacter()
     {
@@ -141,6 +168,8 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Read a boolean.
+     *
+     * @return  bool
      */
     public function readBoolean()
     {
@@ -149,16 +178,22 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Read an integer.
+     *
+     * @param   int     $length    Length.
+     * @return  int
      */
-    public function readInteger(int $length = 1)
+    public function readInteger($length = 1)
     {
         return (int) $this->read($length);
     }
 
     /**
      * Read a float.
+     *
+     * @param   int     $length    Length.
+     * @return  float
      */
-    public function readFloat(int $length = 1)
+    public function readFloat($length = 1)
     {
         return (float) $this->read($length);
     }
@@ -166,14 +201,19 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
     /**
      * Read an array.
      * Alias of the $this->scanf() method.
+     *
+     * @param   string  $format    Format (see printf's formats).
+     * @return  array
      */
-    public function readArray(string $format = null)
+    public function readArray($format = null)
     {
         return $this->scanf($format);
     }
 
     /**
      * Read a line.
+     *
+     * @return  string
      */
     public function readLine()
     {
@@ -182,24 +222,35 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Read all, i.e. read as much as possible.
+     *
+     * @param   int  $offset    Offset.
+     * @return  string
      */
-    public function readAll(int $offset = 0)
+    public function readAll($offset = 0)
     {
         return stream_get_contents($this->getStream(), -1, $offset);
     }
 
     /**
      * Parse input from a stream according to a format.
+     *
+     * @param   string  $format    Format (see printf's formats).
+     * @return  array
      */
-    public function scanf(string $format): array
+    public function scanf($format)
     {
         return fscanf($this->getStream(), $format);
     }
 
     /**
      * Write n characters.
+     *
+     * @param   string  $string    String.
+     * @param   int     $length    Length.
+     * @return  mixed
+     * @throws  \igorora\File\Exception
      */
-    public function write(string $string, int $length)
+    public function write($string, $length)
     {
         if (0 > $length) {
             throw new File\Exception(
@@ -214,8 +265,11 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Write a string.
+     *
+     * @param   string  $string    String.
+     * @return  mixed
      */
-    public function writeString(string $string)
+    public function writeString($string)
     {
         $string = (string) $string;
 
@@ -224,24 +278,33 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Write a character.
+     *
+     * @param   string  $char    Character.
+     * @return  mixed
      */
-    public function writeCharacter(string $char)
+    public function writeCharacter($char)
     {
         return $this->write((string) $char[0], 1);
     }
 
     /**
      * Write a boolean.
+     *
+     * @param   bool    $boolean    Boolean.
+     * @return  mixed
      */
-    public function writeBoolean(bool $boolean)
+    public function writeBoolean($boolean)
     {
         return $this->write((string) (bool) $boolean, 1);
     }
 
     /**
      * Write an integer.
+     *
+     * @param   int     $integer    Integer.
+     * @return  mixed
      */
-    public function writeInteger(int $integer)
+    public function writeInteger($integer)
     {
         $integer = (string) (int) $integer;
 
@@ -250,8 +313,11 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Write a float.
+     *
+     * @param   float   $float    Float.
+     * @return  mixed
      */
-    public function writeFloat(float $float)
+    public function writeFloat($float)
     {
         $float = (string) (float) $float;
 
@@ -260,6 +326,9 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Write an array.
+     *
+     * @param   array   $array    Array.
+     * @return  mixed
      */
     public function writeArray(array $array)
     {
@@ -270,8 +339,11 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Write a line.
+     *
+     * @param   string  $line    Line.
+     * @return  mixed
      */
-    public function writeLine(string $line)
+    public function writeLine($line)
     {
         if (false === $n = strpos($line, "\n")) {
             return $this->write($line . "\n", strlen($line) + 1);
@@ -284,16 +356,22 @@ class ReadWrite extends Temporary implements Stream\IStream\In, Stream\IStream\O
 
     /**
      * Write all, i.e. as much as possible.
+     *
+     * @param   string  $string    String.
+     * @return  mixed
      */
-    public function writeAll(string $string)
+    public function writeAll($string)
     {
         return $this->write($string, strlen($string));
     }
 
     /**
      * Truncate a file to a given length.
+     *
+     * @param   int     $size    Size.
+     * @return  bool
      */
-    public function truncate(int $size): bool
+    public function truncate($size)
     {
         return ftruncate($this->getStream(), $size);
     }

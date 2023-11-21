@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,44 +34,62 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File;
+namespace igorora\File;
 
-use Hoa\Stream;
+use igorora\Stream\Context;
+use igorora\File\Exception\Exception;
+use igorora\Stream\IStream\Touchable;
+use igorora\File\Exception\FileDoesNotExist;
 
 /**
- * Class \Hoa\File\Directory.
+ * Class \igorora\File\Directory.
  *
  * Directory handler.
+ *
+ * @copyright  Copyright © 2007-2017 Hoa community
+ * @license    New BSD License
  */
 class Directory extends Generic
 {
     /**
      * Open for reading.
+     *
+     * @const string
      */
-    public const MODE_READ             = 'rb';
+    const MODE_READ             = 'rb';
 
     /**
      * Open for reading and writing. If the directory does not exist, attempt to
      * create it.
+     *
+     * @const string
      */
-    public const MODE_CREATE           = 'xb';
+    const MODE_CREATE           = 'xb';
 
     /**
      * Open for reading and writing. If the directory does not exist, attempt to
      * create it recursively.
+     *
+     * @const string
      */
-    public const MODE_CREATE_RECURSIVE = 'xrb';
+    const MODE_CREATE_RECURSIVE = 'xrb';
 
 
 
     /**
      * Open a directory.
+     *
+     * @param   string  $streamName    Stream name.
+     * @param   string  $mode          Open mode, see the self::MODE* constants.
+     * @param   string  $context       Context ID (please, see the
+     *                                 \igorora\Stream\Context class).
+     * @param   bool    $wait          Differ opening or not.
      */
     public function __construct(
-        string $streamName,
-        string $mode    = self::MODE_READ,
-        string $context = null,
-        bool $wait      = false
+        $streamName,
+        $mode    = self::MODE_READ,
+        $context = null,
+        $wait    = false
     ) {
         $this->setMode($mode);
         parent::__construct($streamName, $context, $wait);
@@ -83,12 +99,17 @@ class Directory extends Generic
 
     /**
      * Open the stream and return the associated resource.
+     *
+     * @param   string               $streamName    Stream name (e.g. path or URL).
+     * @param   Context  $context       Context.
+     * @return  resource
+     * @throws  FileDoesNotExist
      */
-    protected function &_open(string $streamName, Stream\Context $context = null)
+    protected function &_open($streamName, Context $context = null)
     {
         if (false === is_dir($streamName)) {
             if ($this->getMode() == self::MODE_READ) {
-                throw new Exception\FileDoesNotExist(
+                throw new FileDoesNotExist(
                     'Directory %s does not exist.',
                     0,
                     $streamName
@@ -111,16 +132,25 @@ class Directory extends Generic
 
     /**
      * Close the current stream.
+     *
+     * @return  bool
      */
-    protected function _close(): bool
+    protected function _close()
     {
         return true;
     }
 
     /**
      * Recursive copy of a directory.
+     *
+     * @param   string  $to       Destination path.
+     * @param   bool    $force    Force to copy if the file $to already exists.
+     *                            Use the Touchable::*OVERWRITE
+     *                            constants.
+     * @return  bool
+     * @throws  Exception
      */
-    public function copy(string $to, bool $force = Stream\IStream\Touchable::DO_NOT_OVERWRITE): bool
+    public function copy($to, $force = Touchable::DO_NOT_OVERWRITE)
     {
         if (empty($to)) {
             throw new Exception(
@@ -156,7 +186,7 @@ class Directory extends Generic
             if (true === $file->isFile()) {
                 $handle = new Read($file->getPathname());
             } elseif (true === $file->isDir()) {
-                $handle = new self($file->getPathName());
+                $handle = new Directory($file->getPathName());
             } elseif (true === $file->isLink()) {
                 $handle = new Link\Read($file->getPathName());
             }
@@ -172,8 +202,10 @@ class Directory extends Generic
 
     /**
      * Delete a directory.
+     *
+     * @return  bool
      */
-    public function delete(): bool
+    public function delete()
     {
         $from   = $this->getStreamName();
         $finder = new Finder();
@@ -194,12 +226,20 @@ class Directory extends Generic
 
     /**
      * Create a directory.
+     *
+     * @param   string  $name       Directory name.
+     * @param   string  $mode       Create mode. Please, see the self::MODE_CREATE*
+     *                              constants.
+     * @param   string  $context    Context ID (please, see the
+     *                              \igorora\Stream\Context class).
+     * @return  bool
+     * @throws  Exception
      */
     public static function create(
-        string $name,
-        string $mode    = self::MODE_CREATE_RECURSIVE,
-        string $context = null
-    ): bool {
+        $name,
+        $mode    = self::MODE_CREATE_RECURSIVE,
+        $context = null
+    ) {
         if (true === is_dir($name)) {
             return true;
         }
@@ -209,7 +249,7 @@ class Directory extends Generic
         }
 
         if (null !== $context) {
-            if (false === Stream\Context::contextExists($context)) {
+            if (false === Context::contextExists($context)) {
                 throw new Exception(
                     'Context %s was not previously declared, cannot retrieve ' .
                     'this context.',
@@ -217,7 +257,7 @@ class Directory extends Generic
                     $context
                 );
             } else {
-                $context = Stream\Context::getInstance($context);
+                $context = Context::getInstance($context);
             }
         }
 

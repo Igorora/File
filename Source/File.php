@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,55 +34,79 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File;
+namespace igorora\File;
 
-use Hoa\Consistency;
-use Hoa\Stream;
+use igorora\Stream;
+use igorora\Stream\Context;
+use igorora\Consistency\Consistency;
+use igorora\Stream\IStream\Lockable;
+use igorora\File\Exception\Exception;
+use igorora\Stream\IStream\Pointable;
+use igorora\Stream\IStream\Bufferable;
 
 /**
- * Class \Hoa\File.
+ * Class \igorora\File.
  *
  * File handler.
+ *
+ * @copyright  Copyright © 2007-2017 Hoa community
+ * @license    New BSD License
  */
-abstract class File extends Generic implements Stream\IStream\Bufferable, Stream\IStream\Lockable, Stream\IStream\Pointable
+abstract class File
+    extends    Generic
+    implements Bufferable,
+               Lockable,
+               Pointable
 {
     /**
      * Open for reading only; place the file pointer at the beginning of the
      * file.
+     *
+     * @const string
      */
-    public const MODE_READ                = 'rb';
+    const MODE_READ                = 'rb';
 
     /**
      * Open for reading and writing; place the file pointer at the beginning of
      * the file.
+     *
+     * @const string
      */
-    public const MODE_READ_WRITE          = 'r+b';
+    const MODE_READ_WRITE          = 'r+b';
 
     /**
      * Open for writing only; place the file pointer at the beginning of the
      * file and truncate the file to zero length. If the file does not exist,
      * attempt to create it.
+     *
+     * @const string
      */
-    public const MODE_TRUNCATE_WRITE      = 'wb';
+    const MODE_TRUNCATE_WRITE      = 'wb';
 
     /**
      * Open for reading and writing; place the file pointer at the beginning of
      * the file and truncate the file to zero length. If the file does not
      * exist, attempt to create it.
+     *
+     * @const string
      */
-    public const MODE_TRUNCATE_READ_WRITE = 'w+b';
+    const MODE_TRUNCATE_READ_WRITE = 'w+b';
 
     /**
      * Open for writing only; place the file pointer at the end of the file. If
      * the file does not exist, attempt to create it.
+     *
+     * @const string
      */
-    public const MODE_APPEND_WRITE        = 'ab';
+    const MODE_APPEND_WRITE        = 'ab';
 
     /**
      * Open for reading and writing; place the file pointer at the end of the
      * file. If the file does not exist, attempt to create it.
+     *
+     * @const string
      */
-    public const MODE_APPEND_READ_WRITE   = 'a+b';
+    const MODE_APPEND_READ_WRITE   = 'a+b';
 
     /**
      * Create and open for writing only; place the file pointer at the beginning
@@ -92,8 +114,10 @@ abstract class File extends Generic implements Stream\IStream\Bufferable, Stream
      * returning false and generating an error of level E_WARNING. If the file
      * does not exist, attempt to create it. This is equivalent to specifying
      * O_EXCL | O_CREAT flags for the underlying open(2) system call.
+     *
+     * @const string
      */
-    public const MODE_CREATE_WRITE        = 'xb';
+    const MODE_CREATE_WRITE        = 'xb';
 
     /**
      * Create and open for reading and writing; place the file pointer at the
@@ -101,23 +125,34 @@ abstract class File extends Generic implements Stream\IStream\Bufferable, Stream
      * fail by returning false and generating an error of level E_WARNING. If
      * the file does not exist, attempt to create it. This is equivalent to
      * specifying O_EXCL | O_CREAT flags for the underlying open(2) system call.
+     *
+     * @const string
      */
-    public const MODE_CREATE_READ_WRITE   = 'x+b';
+    const MODE_CREATE_READ_WRITE   = 'x+b';
 
 
 
     /**
      * Open a file.
+     *
+     * @param   string  $streamName    Stream name (or file descriptor).
+     * @param   string  $mode          Open mode, see the self::MODE_*
+     *                                 constants.
+     * @param   string  $context       Context ID (please, see the
+     *                                 \igorora\Stream\Context class).
+     * @param   bool    $wait          Differ opening or not.
+     * @throws  Exception
      */
     public function __construct(
-        string $streamName,
-        string $mode,
-        string $context = null,
-        bool $wait      = false
+        $streamName,
+        $mode,
+        $context = null,
+        $wait    = false
     ) {
         $this->setMode($mode);
 
         switch ($streamName) {
+
             case '0':
                 $streamName = 'php://stdin';
 
@@ -155,8 +190,13 @@ abstract class File extends Generic implements Stream\IStream\Bufferable, Stream
 
     /**
      * Open the stream and return the associated resource.
+     *
+     * @param   string               $streamName    Stream name (e.g. path or URL).
+     * @param   Context  $context       Context.
+     * @return  resource
+     * @throws  Exception
      */
-    protected function &_open(string $streamName, Stream\Context $context = null)
+    protected function &_open($streamName, Context $context = null)
     {
         if (substr($streamName, 0, 4) == 'file' &&
             false === is_dir(dirname($streamName))) {
@@ -199,8 +239,10 @@ abstract class File extends Generic implements Stream\IStream\Bufferable, Stream
 
     /**
      * Close the current stream.
+     *
+     * @return  bool
      */
-    protected function _close(): bool
+    protected function _close()
     {
         return @fclose($this->getStream());
     }
@@ -208,8 +250,12 @@ abstract class File extends Generic implements Stream\IStream\Bufferable, Stream
     /**
      * Start a new buffer.
      * The callable acts like a light filter.
+     *
+     * @param   mixed   $callable    Callable.
+     * @param   int     $size        Size.
+     * @return  int
      */
-    public function newBuffer(callable $callable = null, int $size = null): int
+    public function newBuffer($callable = null, $size = null)
     {
         $this->setStreamBuffer($size);
 
@@ -220,64 +266,85 @@ abstract class File extends Generic implements Stream\IStream\Bufferable, Stream
 
     /**
      * Flush the output to a stream.
+     *
+     * @return  bool
      */
-    public function flush(): bool
+    public function flush()
     {
         return fflush($this->getStream());
     }
 
     /**
      * Delete buffer.
+     *
+     * @return  bool
      */
-    public function deleteBuffer(): bool
+    public function deleteBuffer()
     {
         return $this->disableStreamBuffer();
     }
 
     /**
      * Get bufffer level.
+     *
+     * @return  int
      */
-    public function getBufferLevel(): int
+    public function getBufferLevel()
     {
         return 1;
     }
 
     /**
      * Get buffer size.
+     *
+     * @return  int
      */
-    public function getBufferSize(): int
+    public function getBufferSize()
     {
         return $this->getStreamBufferSize();
     }
 
     /**
      * Portable advisory locking.
+     *
+     * @param   int     $operation    Operation, use the
+     *                                \igorora\Stream\IStream\Lockable::LOCK_* constants.
+     * @return  bool
      */
-    public function lock(int $operation): bool
+    public function lock($operation)
     {
         return flock($this->getStream(), $operation);
     }
 
     /**
      * Rewind the position of a stream pointer.
+     *
+     * @return  bool
      */
-    public function rewind(): bool
+    public function rewind()
     {
         return rewind($this->getStream());
     }
 
     /**
      * Seek on a stream pointer.
+     *
+     * @param   int     $offset    Offset (negative value should be supported).
+     * @param   int     $whence    Whence, use the
+     *                             \igorora\Stream\IStream\Pointable::SEEK_* constants.
+     * @return  int
      */
-    public function seek(int $offset, int $whence = Stream\IStream\Pointable::SEEK_SET): int
+    public function seek($offset, $whence = Pointable::SEEK_SET)
     {
         return fseek($this->getStream(), $offset, $whence);
     }
 
     /**
      * Get the current position of the stream pointer.
+     *
+     * @return  int
      */
-    public function tell(): int
+    public function tell()
     {
         $stream = $this->getStream();
 
@@ -290,8 +357,12 @@ abstract class File extends Generic implements Stream\IStream\Bufferable, Stream
 
     /**
      * Create a file.
+     *
+     * @param   string  $name     File name.
+     * @param   mixed   $dummy    To be compatible with childs.
+     * @return  bool
      */
-    public static function create(string $name)
+    public static function create($name, $dummy)
     {
         if (file_exists($name)) {
             return true;
@@ -304,4 +375,4 @@ abstract class File extends Generic implements Stream\IStream\Bufferable, Stream
 /**
  * Flex entity.
  */
-Consistency::flexEntity(File::class);
+Consistency::flexEntity('igorora\File\File');

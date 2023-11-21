@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,13 +34,15 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File\Link;
+namespace igorora\File\Link;
 
-use Hoa\File;
-use Hoa\Stream;
+use igorora\Stream;
+use igorora\Stream\Context;
+use igorora\File\Exception\Exception;
+use igorora\File\Exception\FileDoesNotExist;
 
 /**
- * Class \Hoa\File\Link\Write.
+ * Class \igorora\File\Link\Write.
  *
  * File handler.
  *
@@ -52,12 +52,18 @@ class Write extends Link implements Stream\IStream\Out
 {
     /**
      * Open a file.
+     *
+     * @param   string  $streamName    Stream name.
+     * @param   string  $mode          Open mode, see the parent::MODE_* constants.
+     * @param   string  $context       Context ID (please, see the
+     *                                 \igorora\Stream\Context class).
+     * @param   bool    $wait          Differ opening or not.
      */
     public function __construct(
-        string $streamName,
-        string $mode    = parent::MODE_APPEND_WRITE,
-        string $context = null,
-        bool $wait      = false
+        $streamName,
+        $mode    = parent::MODE_APPEND_WRITE,
+        $context = null,
+        $wait    = false
     ) {
         parent::__construct($streamName, $mode, $context, $wait);
 
@@ -66,8 +72,14 @@ class Write extends Link implements Stream\IStream\Out
 
     /**
      * Open the stream and return the associated resource.
+     *
+     * @param   string               $streamName    Stream name (e.g. path or URL).
+     * @param   Context  $context       Context.
+     * @return  resource
+     * @throws  FileDoesNotExist
+     * @throws  Exception
      */
-    protected function &_open(string $streamName, Stream\Context $context = null)
+    protected function &_open($streamName, Context $context = null)
     {
         static $createModes = [
             parent::MODE_TRUNCATE_WRITE,
@@ -76,7 +88,7 @@ class Write extends Link implements Stream\IStream\Out
         ];
 
         if (!in_array($this->getMode(), $createModes)) {
-            throw new File\Exception(
+            throw new Exception(
                 'Open mode are not supported; given %d. Only %s are supported.',
                 0,
                 [$this->getMode(), implode(', ', $createModes)]
@@ -87,7 +99,7 @@ class Write extends Link implements Stream\IStream\Out
 
         if (((isset($match[1]) && $match[1] == 'file') || !isset($match[1])) &&
             !file_exists($streamName)) {
-            throw new File\Exception\FileDoesNotExist(
+            throw new FileDoesNotExist(
                 'File %s does not exist.',
                 1,
                 $streamName
@@ -101,11 +113,16 @@ class Write extends Link implements Stream\IStream\Out
 
     /**
      * Write n characters.
+     *
+     * @param   string  $string    String.
+     * @param   int     $length    Length.
+     * @return  mixed
+     * @throws  Exception
      */
-    public function write(string $string, int $length)
+    public function write($string, $length)
     {
         if (0 > $length) {
-            throw new File\Exception(
+            throw new Exception(
                 'Length must be greater than 0, given %d.',
                 2,
                 $length
@@ -117,8 +134,11 @@ class Write extends Link implements Stream\IStream\Out
 
     /**
      * Write a string.
+     *
+     * @param   string  $string    String.
+     * @return  mixed
      */
-    public function writeString(string $string)
+    public function writeString($string)
     {
         $string = (string) $string;
 
@@ -127,24 +147,33 @@ class Write extends Link implements Stream\IStream\Out
 
     /**
      * Write a character.
+     *
+     * @param   string  $char    Character.
+     * @return  mixed
      */
-    public function writeCharacter(string $char)
+    public function writeCharacter($char)
     {
         return $this->write((string) $char[0], 1);
     }
 
     /**
      * Write a boolean.
+     *
+     * @param   bool    $boolean    Boolean.
+     * @return  mixed
      */
-    public function writeBoolean(bool $boolean)
+    public function writeBoolean($boolean)
     {
         return $this->write((string) (bool) $boolean, 1);
     }
 
     /**
      * Write an integer.
+     *
+     * @param   int     $integer    Integer.
+     * @return  mixed
      */
-    public function writeInteger(int $integer)
+    public function writeInteger($integer)
     {
         $integer = (string) (int) $integer;
 
@@ -153,8 +182,11 @@ class Write extends Link implements Stream\IStream\Out
 
     /**
      * Write a float.
+     *
+     * @param   float   $float    Float.
+     * @return  mixed
      */
-    public function writeFloat(float $float)
+    public function writeFloat($float)
     {
         $float = (string) (float) $float;
 
@@ -163,6 +195,9 @@ class Write extends Link implements Stream\IStream\Out
 
     /**
      * Write an array.
+     *
+     * @param   array   $array    Array.
+     * @return  mixed
      */
     public function writeArray(array $array)
     {
@@ -173,8 +208,11 @@ class Write extends Link implements Stream\IStream\Out
 
     /**
      * Write a line.
+     *
+     * @param   string  $line    Line.
+     * @return  mixed
      */
-    public function writeLine(string $line)
+    public function writeLine($line)
     {
         if (false === $n = strpos($line, "\n")) {
             return $this->write($line . "\n", strlen($line) + 1);
@@ -187,16 +225,22 @@ class Write extends Link implements Stream\IStream\Out
 
     /**
      * Write all, i.e. as much as possible.
+     *
+     * @param   string  $string    String.
+     * @return  mixed
      */
-    public function writeAll(string $string)
+    public function writeAll($string)
     {
         return $this->write($string, strlen($string));
     }
 
     /**
      * Truncate a file to a given length.
+     *
+     * @param   int     $size    Size.
+     * @return  bool
      */
-    public function truncate(int $size): bool
+    public function truncate($size)
     {
         return ftruncate($this->getStream(), $size);
     }

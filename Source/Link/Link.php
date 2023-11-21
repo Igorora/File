@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,29 +34,43 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File\Link;
+namespace igorora\File\Link;
 
-use Hoa\Consistency;
-use Hoa\File;
+use igorora\File\File;
+use igorora\File\Directory;
+use igorora\File\ReadWrite;
+use igorora\Consistency\Consistency;
+use igorora\File\Exception\Exception;
 
 /**
- * Class \Hoa\File\Link.
+ * Class \igorora\File\Link.
  *
  * Link handler.
+ *
+ * @copyright  Copyright © 2007-2017 Hoa community
+ * @license    New BSD License
  */
 class Link extends File
 {
     /**
      * Open a link.
+     *
+     * @param   string  $streamName    Stream name.
+     * @param   string  $mode          Open mode, see the parent::MODE_*
+     *                                 constants.
+     * @param   string  $context       Context ID (please, see the
+     *                                 \igorora\Stream\Context class).
+     * @param   bool    $wait          Differ opening or not.
+     * @throws  Exception
      */
     public function __construct(
-        string $streamName,
-        string $mode,
-        string $context = null,
-        bool $wait      = false
+        $streamName,
+        $mode,
+        $context = null,
+        $wait    = false
     ) {
         if (!is_link($streamName)) {
-            throw new File\Exception(
+            throw new Exception(
                 'File %s is not a link.',
                 0,
                 $streamName
@@ -72,46 +84,59 @@ class Link extends File
 
     /**
      * Get informations about a link.
+     *
+     * @return  array
      */
-    public function getStatistic(): array
+    public function getStatistic()
     {
         return lstat($this->getStreamName());
     }
 
     /**
      * Change file group.
+     *
+     * @param   mixed   $group    Group name or number.
+     * @return  bool
      */
-    public function changeGroup($group): bool
+    public function changeGroup($group)
     {
         return lchgrp($this->getStreamName(), $group);
     }
 
     /**
      * Change file owner.
+     *
+     * @param   mixed   $user   User.
+     * @return  bool
      */
-    public function changeOwner($user): bool
+    public function changeOwner($user)
     {
         return lchown($this->getStreamName(), $user);
     }
 
     /**
      * Get file permissions.
+     *
+     * @return  int
      */
-    public function getPermissions(): int
+    public function getPermissions()
     {
         return 41453; // i.e. lrwxr-xr-x
     }
 
     /**
      * Get the target of a symbolic link.
+     *
+     * @return  \igorora\File\Generic
+     * @throws  \igorora\File\Exception
      */
-    public function getTarget(): File\Generic
+    public function getTarget()
     {
-        $target  = dirname($this->getStreamName()) . DS .
-                   $this->getTargetName();
-        $context = null !== $this->getStreamContext()
-                       ? $this->getStreamContext()->getCurrentId()
-                       : null;
+        $target    = dirname($this->getStreamName()) . DS .
+                     $this->getTargetName();
+        $context   = null !== $this->getStreamContext()
+                         ? $this->getStreamContext()->getId()
+                         : null;
 
         if (true === is_link($target)) {
             return new ReadWrite(
@@ -120,20 +145,20 @@ class Link extends File
                 $context
             );
         } elseif (true === is_file($target)) {
-            return new File\ReadWrite(
+            return new ReadWrite(
                 $target,
                 File::MODE_APPEND_READ_WRITE,
                 $context
             );
         } elseif (true === is_dir($target)) {
-            return new File\Directory(
+            return new Directory(
                 $target,
                 File::MODE_READ,
                 $context
             );
         }
 
-        throw new File\Exception(
+        throw new Exception(
             'Cannot find an appropriated object that matches with ' .
             'path %s when defining it.',
             1,
@@ -143,16 +168,22 @@ class Link extends File
 
     /**
      * Get the target name of a symbolic link.
+     *
+     * @return  string
      */
-    public function getTargetName(): string
+    public function getTargetName()
     {
         return readlink($this->getStreamName());
     }
 
     /**
      * Create a link.
+     *
+     * @param   string  $name      Link name.
+     * @param   string  $target    Target name.
+     * @return  bool
      */
-    public static function create(string $name, string $target): bool
+    public static function create($name, $target)
     {
         if (false != linkinfo($name)) {
             return true;
@@ -165,4 +196,4 @@ class Link extends File
 /**
  * Flex entity.
  */
-Consistency::flexEntity(Link::class);
+Consistency::flexEntity('igorora\File\Link\Link');

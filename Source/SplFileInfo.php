@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Hoa
  *
@@ -36,28 +34,37 @@ declare(strict_types=1);
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Hoa\File;
+namespace igorora\File;
 
-use Hoa\Iterator;
+
+use igorora\File\Exception\Exception;
 
 /**
- * Class \Hoa\File\SplFileInfo.
+ * Class \igorora\File\SplFileInfo.
  *
- * Link between \Hoa\Iterator\SplFileInfo and \Hoa\File.
+ * Link between \igorora\Iterator\SplFileInfo and \igorora\File.
+ *
+ * @copyright  Copyright © 2007-2017 Hoa community
+ * @license    New BSD License
  */
-class SplFileInfo extends Iterator\SplFileInfo
+class SplFileInfo extends \igorora\Iterator\SplFileInfo
 {
     /**
      * Current stream.
+     *
+     * @var \igorora\File\Generic
      */
     protected $_stream = null;
 
 
 
     /**
-     * Open the SplFileInfo as a Hoa\File stream.
+     * Open the SplFileInfo as a igorora\File stream.
+     *
+     * @return  \igorora\File\Generic
+     * @throws  Exception
      */
-    public function open(): Generic
+    public function open()
     {
         if (true === $this->isFile()) {
             return $this->_stream = new ReadWrite($this->getPathname());
@@ -72,6 +79,8 @@ class SplFileInfo extends Iterator\SplFileInfo
 
     /**
      * Close the opened stream.
+     *
+     * @return  void
      */
     public function close()
     {
@@ -84,6 +93,8 @@ class SplFileInfo extends Iterator\SplFileInfo
 
     /**
      * Destruct.
+     *
+     * @return  void
      */
     public function __destruct()
     {
